@@ -2,6 +2,13 @@ from django.shortcuts import render
 from django.http import HttpResponse
 from datetime import datetime
 
+
+from rest_framework.response import Response
+
+from .models import Reclamacao
+from .serializers import ReclamacaoSerializers
+from rest_framework.decorators import api_view
+
 import requests
 import json
 import time
@@ -25,6 +32,18 @@ cb['X-Auth-Token'] = json.loads(token.text)['token']
 #print(token.text)
 
 # Create your views here.
+
+
+@api_view(['GET', 'POST'])
+def reclamacoes(request):
+	if request.method == 'GET':
+		reclamacoes = Reclamacao.objects.all()
+		print(reclamacoes)
+		serializer = ReclamacaoSerializers(reclamacoes, many=True)
+		print(serializer)
+		return Response(serializer.data)
+
+
 def post_list(request):
 	global token
 	now = datetime.now().minute

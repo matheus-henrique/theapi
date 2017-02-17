@@ -8,4 +8,6 @@ urlpatterns = [
     url(r'^reclamacoes/$',views.reclamacoes),
     url(r'^linhas/$',views.linhas),
     url(r'^linhas/(?P<pk>[0-9]+)/$', views.veiculo_especifico),
+    url(r'^linhasestaticas/$',views.linhas_estaticas),
+    url(r'^todasaslinhasestaticas/$',views.todas_linhas_estaticas),
 ]

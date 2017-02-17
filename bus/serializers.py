@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Reclamacao,Veiculo,Linha
+from .models import Reclamacao,Veiculo,Linha,LinhaOnibus
 
 
 class ReclamacaoSerializers(serializers.ModelSerializer):
@@ -18,6 +18,11 @@ class LinhaSerializers(serializers.ModelSerializer):
 	class Meta:
 		model = Linha
 		fields = ('CodigoLinha','Origem','Retorno','Denomicao','Veiculos')
+
+class LinhaOnibusSerializers(serializers.ModelSerializer):
+	class Meta:
+		model = LinhaOnibus
+		fields = ('Numero','Denomicao','Zona') 
 
 
 

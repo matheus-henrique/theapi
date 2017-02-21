@@ -11,7 +11,7 @@ class ReclamacaoSerializers(serializers.ModelSerializer):
 class VeiculoSerializers(serializers.ModelSerializer):
 	class Meta:
 		model = Veiculo
-		fields = ('CodigoVeiculo','Lat','Long','Hora')
+		fields = ('CodigoVeiculo','Lat','Long','Hora','Cadeirante')
 
 class LinhaSerializers(serializers.ModelSerializer):
 	Veiculos = VeiculoSerializers(many=True)

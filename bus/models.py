@@ -22,6 +22,7 @@ class Veiculo(models.Model):
 	Long = models.CharField(max_length=30)
 	Hora = models.CharField(max_length=30)
 	Linha = models.ForeignKey(Linha,related_name='Veiculos')
+	Cadeirante = models.BooleanField(default=False)
 
 class LinhaOnibus(models.Model):
 	Numero = models.CharField(max_length=30)

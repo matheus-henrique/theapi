@@ -36,7 +36,7 @@ cadeirantes = ['02194','02200','02196','02186','02148','02555','02128','02501','
 '04426','04395','04299','04347','01385','01378','01386','04364','04396','04356','04353','02130','02778','04393','02780','02781','04370','04430','04368','04389','01398','01390','01053',
 '02190','02557','02547','04445','04357','04405','03069','03070','03242','04427','04376','03418','03462','04442','04386','02549','02553','02776','03233','01066','01069','01089','02154',
 '02152','02202','02214','02150','02503','02775','04437','04408','04348','04363','02182','02188','02210','04350','04432','04400','03456','03432','03444','04434','04359','04384','04409',
-'03430']
+'03430','02507','03255']
 sem_info = ['04373','04338','04341','04333','01349','00198','00157','00183','00172','00197','00176','00194','00189','00145','00173','']
 ar = ['02563','04451','04454','04446','04453','03258','03468','04452','03469','03472','03461','03471','03466','03465','04448','04450','04447','04449','04455','04444','04445','03462',]
 
@@ -46,10 +46,14 @@ print(len(cadeirantes))
 
 def pegar_token():
 	print("dadasd")
-	return requests.post('https://api.inthegra.strans.teresina.pi.gov.br/v1/signin',proxies=proxies, data=json.dumps(dados),headers = cb)
+	data = requests.post('https://api.inthegra.strans.teresina.pi.gov.br/v1/signin',proxies=proxies, data=json.dumps(dados),headers = cb)
+	cb['X-Auth-Token'] = json.loads(data.text)['token']
+	return data
 
 token = pegar_token()
 cb['X-Auth-Token'] = json.loads(token.text)['token']
+
+
 #print(token.text)
 #print(token.text)
 
@@ -75,6 +79,30 @@ def reclamacoes(request):
 
 @api_view(['GET', 'POST'])
 def linhas(request):
+	verifica_token()
+	url = "https://api.inthegra.strans.teresina.pi.gov.br/v1/veiculos"
+	data = requests.get(url,proxies=proxies, data=json.dumps(dados),headers = cb)
+
+	vec = json.loads(data.text)
+	linha = ''
+	veiculo = ''
+
+	for x in vec:
+		if Linha.objects.filter(CodigoLinha=x['Linha']['CodigoLinha']).exists():
+			linha = Linha.objects.get(CodigoLinha=x['Linha']['CodigoLinha'])
+		else:
+			linha = Linha.objects.create(CodigoLinha=x['Linha']['CodigoLinha'],Origem=x['Linha']['Origem'],Retorno=x['Linha']['Retorno'],Denomicao=x['Linha']['Denomicao'])
+
+		for y in x['Linha']['Veiculos']:
+			adptado = verifica_onibus_adaptado(y['CodigoVeiculo'])
+			if Veiculo.objects.filter(CodigoVeiculo=y['CodigoVeiculo']).exists():
+				veiculo = Veiculo.objects.get(CodigoVeiculo=y['CodigoVeiculo'])
+				veiculo.Lat = y['Lat']
+				veiculo.Long = y['Long']
+				veiculo.Hora = y['Hora']
+				veiculo.save()
+			else:
+				veiculo = Veiculo.objects.create(CodigoVeiculo=y['CodigoVeiculo'],Lat=y['Lat'],Long=y['Long'],Hora=y['Hora'],Linha=linha,Cadeirante=adptado)		
 	if request.method == 'GET':
 		linha = Linha.objects.all()
 		serializer = LinhaSerializers(linha, many=True)
@@ -197,12 +225,9 @@ def linhas_estaticas(request):
 	return HttpResponse("Ok")
 
 def verifica_onibus_adaptado(num):
-	array_length = len(cadeirantes)
-	for i in range(array_length):
-		if (cadeirantes[i] == num):
+	for i in cadeirantes:
+		if (i == num):
 			return True
-		i = i + 1
-		print(cadeirantes[i])
 	return False
 
 

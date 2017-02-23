@@ -27,7 +27,7 @@ cb = {"Content-Type": "application/json", "Accept-Language": "en", "Date": "Wed,
 
 cadeirantes = ['02194','02200','02196','02186','02148','02555','02128','02501','02563','02511','02521','02134','02773','04391','04402','04415','04451','04435','04349','04372','04401',
 '04433','04366','04388','04441','04443','04417','04454','04431','04379','04385','04397','04446','04387','04374','04453','03404','04411','04380','04381','03257','03250','03067','03258',
-'03429','03068','03468','03071','03234','03239','03254','01056','01073','01087','01072','01379','03225','03405','03237','01076','01071','01381','01067','01080','01090','01065','01408',
+'03429','03068','03468','03071','03234','03239','03254','01056','01073','01087','01072','01379','03405','03237','01076','01071','01381','01067','01080','01090','01065','01408',
 '01220','01077','01393','01405','01074','04425','04365','04351','04398','04414','04452','03065','03066','03026','03448','03445','03454','03460','03451','03457','03469','03472','03416',
 '03425','03437','03461','03406','03435','03447','03433','03403','03471','03455','03401','03417','03450','03422','03466','03459','03465','04410','04421','04438','04448','04371','04352',
 '04390','04450','04362','04436','04439','01075','01402','01372','01396','01400','01387','01309','01070','01054','04429','04423','04428','04337','04406','04447','02529','02777','02525',
@@ -36,9 +36,9 @@ cadeirantes = ['02194','02200','02196','02186','02148','02555','02128','02501','
 '04426','04395','04299','04347','01385','01378','01386','04364','04396','04356','04353','02130','02778','04393','02780','02781','04370','04430','04368','04389','01398','01390','01053',
 '02190','02557','02547','04445','04357','04405','03069','03070','03242','04427','04376','03418','03462','04442','04386','02549','02553','02776','03233','01066','01069','01089','02154',
 '02152','02202','02214','02150','02503','02775','04437','04408','04348','04363','02182','02188','02210','04350','04432','04400','03456','03432','03444','04434','04359','04384','04409',
-'03430','02507','03255']
+'03430','02507','03255','04403','03412','04406','03074']
 sem_info = ['04373','04338','04341','04333','01349','00198','00157','00183','00172','00197','00176','00194','00189','00145','00173','']
-ar = ['02563','04451','04454','04446','04453','03258','03468','04452','03469','03472','03461','03471','03466','03465','04448','04450','04447','04449','04455','04444','04445','03462',]
+ar = ['02563','04451','04454','04446','04453','03258','03468','04452','03469','03472','03461','03471','03466','03465','04448','04450','04447','04449','04455','04444','04445','03462','03074']
 
 
 
@@ -58,6 +58,8 @@ cb['X-Auth-Token'] = json.loads(token.text)['token']
 #print(token.text)
 
 # Create your views here.
+
+
 
 def verifica_token():
 	global token
@@ -87,11 +89,22 @@ def linhas(request):
 	linha = ''
 	veiculo = ''
 
+
 	for x in vec:
 		if Linha.objects.filter(CodigoLinha=x['Linha']['CodigoLinha']).exists():
 			linha = Linha.objects.get(CodigoLinha=x['Linha']['CodigoLinha'])
 		else:
-			linha = Linha.objects.create(CodigoLinha=x['Linha']['CodigoLinha'],Origem=x['Linha']['Origem'],Retorno=x['Linha']['Retorno'],Denomicao=x['Linha']['Denomicao'])
+			num = str(x['Linha']['CodigoLinha'])
+			zona = LinhaOnibus.objects.filter(Numero=num[1::])
+			if(zona.exists()):
+				nome_zona = zona[0].Zona
+			else:
+				nome_zona = "Outros"
+				print("Nao existe : " + num)
+
+			
+
+			linha = Linha.objects.create(CodigoLinha=x['Linha']['CodigoLinha'],Origem=x['Linha']['Origem'],Retorno=x['Linha']['Retorno'],Denomicao=x['Linha']['Denomicao'], Zona=nome_zona)
 
 		for y in x['Linha']['Veiculos']:
 			adptado = verifica_onibus_adaptado(y['CodigoVeiculo'])
@@ -142,7 +155,7 @@ def linhas_estaticas(request):
 			lin[index]['CodigoLinha'] == '0603' or lin[index]['CodigoLinha'] == '0604' or lin[index]['CodigoLinha'] == '0611' or 
 			lin[index]['CodigoLinha'] == '0612' or lin[index]['CodigoLinha'] == '0619' or lin[index]['CodigoLinha'] == '0702' or 
 			lin[index]['CodigoLinha'] == '0703' or lin[index]['CodigoLinha'] == '0704' or lin[index]['CodigoLinha'] == '0705' or 
-			lin[index]['CodigoLinha'] == '0710' or lin[index]['CodigoLinha'] == '0004'):
+			lin[index]['CodigoLinha'] == '0710' or lin[index]['CodigoLinha'] == '0004' or lin[index]['CodigoLinha'] == '0327'):
 				print("Sudeste")
 				zona = "Sudeste"
 				s = s + 1;
@@ -152,7 +165,7 @@ def linhas_estaticas(request):
 			lin[index]['CodigoLinha'] == '0406' or lin[index]['CodigoLinha'] == '0501' or lin[index]['CodigoLinha'] == '0502' or 
 			lin[index]['CodigoLinha'] == '0503' or lin[index]['CodigoLinha'] == '0512' or lin[index]['CodigoLinha'] == '0513' or 
 			lin[index]['CodigoLinha'] == '0518' or lin[index]['CodigoLinha'] == '0521' or lin[index]['CodigoLinha'] == '0522' or
-			lin[index]['CodigoLinha'] == '0523' or lin[index]['CodigoLinha'] == '0610'):
+			lin[index]['CodigoLinha'] == '0523' or lin[index]['CodigoLinha'] == '0610' or lin[index]['CodigoLinha'] == '0365'):
 				print("leste")
 				zona = "Leste"
 				l = l + 1;
@@ -163,7 +176,7 @@ def linhas_estaticas(request):
 			lin[index]['CodigoLinha'] == '0104' or lin[index]['CodigoLinha'] == '0109' or lin[index]['CodigoLinha'] == '0205' or 
 			lin[index]['CodigoLinha'] == '0105' or lin[index]['CodigoLinha'] == '0201' or lin[index]['CodigoLinha'] == '0206' or
 			lin[index]['CodigoLinha'] == '0301' or lin[index]['CodigoLinha'] == '0302' or lin[index]['CodigoLinha'] == '0303' or
-			lin[index]['CodigoLinha'] == '0304' or lin[index]['CodigoLinha'] == '0730'):
+			lin[index]['CodigoLinha'] == '0304' or lin[index]['CodigoLinha'] == '0730' or lin[index]['CodigoLinha'] == '0563'):
 				print("norte")
 				zona = "Norte"
 				n = n + 1;
@@ -177,7 +190,9 @@ def linhas_estaticas(request):
 			lin[index]['CodigoLinha'] == '0709' or lin[index]['CodigoLinha'] == '0711' or lin[index]['CodigoLinha'] == '0712' or
 			lin[index]['CodigoLinha'] == '0713' or lin[index]['CodigoLinha'] == '0714' or lin[index]['CodigoLinha'] == '0715' or
 			lin[index]['CodigoLinha'] == '0716' or lin[index]['CodigoLinha'] == '0801' or lin[index]['CodigoLinha'] == '0802' or
-			lin[index]['CodigoLinha'] == '0901' or lin[index]['CodigoLinha'] == '0902'):
+			lin[index]['CodigoLinha'] == '0901' or lin[index]['CodigoLinha'] == '0902' or lin[index]['CodigoLinha'] == '0360' or
+			lin[index]['CodigoLinha'] == '0723' or lin[index]['CodigoLinha'] == '0170' or lin[index]['CodigoLinha'] == '0270' or
+			lin[index]['CodigoLinha'] == '716'):
 				print("sul")
 				zona = "Sul"
 				su = su + 1;
@@ -196,9 +211,8 @@ def linhas_estaticas(request):
 				zona = "Terminal"
 				t = t + 1;
 
-		if (zona == ''):
-			LinhaOnibus.objects.create(Numero=lin[index]['CodigoLinha'],Denomicao=lin[index]['Denomicao'],Zona="Outros")
-		else:
+		
+		if(not(zona == '')):
 			numero = str(lin[index]['CodigoLinha'])
 			codigo = ''
 			i = 0;
@@ -212,8 +226,10 @@ def linhas_estaticas(request):
 			else:
 				codigo = lin[index]['CodigoLinha']
 
-
-			LinhaOnibus.objects.create(Numero=codigo,Denomicao=lin[index]['Denomicao'],Zona=zona)
+			if(LinhaOnibus.objects.filter(Numero=codigo).exists()):
+				print("Ja Existe")
+			else:
+				LinhaOnibus.objects.create(Numero=codigo,Denomicao=lin[index]['Denomicao'],Zona=zona)
 		index = index + 1
 	print("Sudeste "+ str(s))
 	print("Leste "+str(l))

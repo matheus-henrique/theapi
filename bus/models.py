@@ -13,6 +13,7 @@ class Linha(models.Model):
 	CodigoLinha = models.CharField(max_length=10)
 	Origem = models.CharField(max_length=200)
 	Retorno = models.CharField(max_length=200)
+	Zona = models.CharField(max_length=200)
 	Denomicao = models.CharField(max_length=200)
 
 

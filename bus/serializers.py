@@ -17,7 +17,7 @@ class LinhaSerializers(serializers.ModelSerializer):
 	Veiculos = VeiculoSerializers(many=True)
 	class Meta:
 		model = Linha
-		fields = ('CodigoLinha','Origem','Retorno','Denomicao','Veiculos')
+		fields = ('CodigoLinha','Origem','Retorno','Denomicao','Veiculos','Zona')
 
 class LinhaOnibusSerializers(serializers.ModelSerializer):
 	class Meta:

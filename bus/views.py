@@ -134,6 +134,14 @@ def post_list(request):
 
 
 
+def distancia_onibus_user(request):
+	url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins=-5.082728,-42.799080&destinations=-5.096149,-42.757065&mode=bicycling&language=pt-BR&key=AIzaSyAXjVVb85BzbZ3GRIFH6rO2WGmBylGG-0c"
+	data = requests.get(url,proxies=proxies)
+	return HttpResponse(data.text)
+
+
+
+
 def linhas_estaticas(request):
 	verifica_token()
 	url = "https://api.inthegra.strans.teresina.pi.gov.br/v1/linhas"

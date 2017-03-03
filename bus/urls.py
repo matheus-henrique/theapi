@@ -11,4 +11,5 @@ urlpatterns = [
     url(r'^linhasestaticas/$',views.linhas_estaticas),
     url(r'^todasaslinhasestaticas/$',views.todas_linhas_estaticas),
     url(r'^linha/zona/(?P<pk>[^/]+)/$', views.linhas_por_zona),
+    url(r'^distanciaonibus/$',views.distancia_onibus_user)
 ]

@@ -139,6 +139,12 @@ def distancia_onibus_user(request):
 	data = requests.get(url,proxies=proxies)
 	return HttpResponse(data.text)
 
+def parada_especifica(request,pk):
+	url = "https://api.inthegra.strans.teresina.pi.gov.br/v1/paradasLinha?busca="+pk
+	verifica_token()
+	data = requests.get(url,proxies=proxies, data=json.dumps(dados),headers = cb)
+	return HttpResponse(data.text)
+
 
 
 

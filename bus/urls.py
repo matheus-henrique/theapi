@@ -12,6 +12,9 @@ urlpatterns = [
     url(r'^todasaslinhasestaticas/$',views.todas_linhas_estaticas),
     url(r'^linha/zona/(?P<pk>[^/]+)/$', views.linhas_por_zona),
     url(r'^distanciaonibus/$',views.distancia_onibus_user),
+    url(r'^adicionarparadas/$',views.preecher_pardas),
+    url(r'^paradas/$',views.mostrar_paradas),
+    url(r'^parada_proxima/$',views.qualquer_distancia_dois_pontos),
     url(r'^parada_especifica/(?P<pk>[0-9]+)/$', views.parada_especifica),
 
 ]

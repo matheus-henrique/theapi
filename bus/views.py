@@ -4,9 +4,12 @@ from datetime import datetime
 
 
 from rest_framework.response import Response
+from rest_framework import status
+from haversine import haversine
+from django.core import serializers
 
-from .models import Reclamacao,Veiculo,Linha,LinhaOnibus
-from .serializers import ReclamacaoSerializers,LinhaSerializers,LinhaOnibusSerializers
+from .models import Reclamacao,Veiculo,Linha,LinhaOnibus,Paradas
+from .serializers import ReclamacaoSerializers,LinhaSerializers,LinhaOnibusSerializers,ParadasSerializers
 from rest_framework.decorators import api_view
 
 import requests
@@ -139,11 +142,63 @@ def distancia_onibus_user(request):
 	data = requests.get(url,proxies=proxies)
 	return HttpResponse(data.text)
 
+
+@api_view(['GET', 'POST'])
 def parada_especifica(request,pk):
 	url = "https://api.inthegra.strans.teresina.pi.gov.br/v1/paradasLinha?busca="+pk
 	verifica_token()
 	data = requests.get(url,proxies=proxies, data=json.dumps(dados),headers = cb)
-	return HttpResponse(data.text)
+	if data.status_code == 404:
+		content = {'please move along': 'nothing to see here'}
+		return Response(content, status=status.HTTP_404_NOT_FOUND)
+	else:
+		return HttpResponse(data.text)
+
+
+
+
+def preecher_pardas(request):
+	url = "https://api.inthegra.strans.teresina.pi.gov.br/v1/paradas"
+	verifica_token()
+	data = requests.get(url,proxies=proxies, data=json.dumps(dados),headers = cb)
+	paradas = json.loads(data.text)
+	for x in paradas:
+		if(x['Endereco'] != None):
+			Paradas.objects.create(CodigoParada=x['CodigoParada'],Denomicao=x['Denomicao'],Endereco=x['Endereco'],Lat=x['Lat'],Long=x['Long'])
+	return HttpResponse("OK")
+
+@api_view(['GET', 'POST'])
+def qualquer_distancia_dois_pontos(request):
+	origem = (-5.095197,-42.757071)
+	index = 0
+	for x in Paradas.objects.all():
+		destino = (float(x.Lat),float(x.Long))
+		if index == 0:
+			maior = haversine(origem,destino)
+			menor = haversine(origem,destino)
+
+		if (haversine(origem,destino) > maior):
+			maior = haversine(origem,destino)
+		if (haversine(origem,destino) < menor):
+			menor_model = x
+			menor = haversine(origem,destino)
+		index = index + 1
+
+	print(menor)
+	print(maior)
+	print(menor_model.Denomicao)
+	content = {'CodigoParada' : menor_model.CodigoParada, 'Denomicao' : menor_model.Denomicao,'Denomicao' : menor_model.Denomicao, 'Endereco' : menor_model.Endereco, 'Lat' : menor_model.Lat, 'Long' : menor_model.Long}
+	return Response(content)
+
+
+
+@api_view(['GET', 'POST'])
+def mostrar_paradas(request):
+	if request.method == "GET":
+		paradas = Paradas.objects.all()
+		serializer = ParadasSerializers(paradas,many=True)
+		return Response(serializer.data)
+
 
 
 

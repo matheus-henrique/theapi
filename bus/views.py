@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from datetime import datetime
-
+from geopy.distance import great_circle
 
 from rest_framework.response import Response
 from rest_framework import status
@@ -11,6 +11,7 @@ from django.core import serializers
 from .models import Reclamacao,Veiculo,Linha,LinhaOnibus,Paradas
 from .serializers import ReclamacaoSerializers,LinhaSerializers,LinhaOnibusSerializers,ParadasSerializers
 from rest_framework.decorators import api_view
+
 
 import requests
 import json
@@ -123,6 +124,40 @@ def linhas(request):
 		linha = Linha.objects.all()
 		serializer = LinhaSerializers(linha, many=True)
 		return Response(serializer.data)
+
+
+
+def distancia_raio(request):
+	latitude = request.META['HTTP_LATITUDE']
+	longitude = request.META['HTTP_LONGITUDE']
+	raio = request.META['HTTP_RAIO']
+	origem = (float(latitude), float(longitude))
+	paradas = Paradas.objects.all()
+	paradas_dentro_raio = []
+	for x in paradas:
+		destino = (float(x.Lat), float(x.Long))
+		distancia = great_circle(origem, destino)
+		print("Raio : "+ raio)
+		teste = str(distancia.km)
+		lala = list(teste)
+
+		lala[1] = lala[4]
+		lala[4] = "."
+		teste = ''.join(lala)
+		print(teste)
+		a = float(teste)
+		print(a)
+		
+		print(x.Lat+":"+x.Long+" Distancia : "+str(distancia))
+		if (a <= float(raio)):
+			print(str(distancia.km) + " < " + raio)
+			print(x.Lat+":"+x.Long+" Ta dentro")
+		else:
+			print(x.Lat+":"+x.Long+" Ta fora")
+
+
+
+
 
 
 def post_list(request):

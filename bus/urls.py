@@ -14,6 +14,7 @@ urlpatterns = [
     url(r'^distanciaonibus/$',views.distancia_onibus_user),
     url(r'^adicionarparadas/$',views.preecher_pardas),
     url(r'^paradas/$',views.mostrar_paradas),
+    url(r'^distancia_raio/$',views.distancia_raio),
     url(r'^parada_proxima/$',views.qualquer_distancia_dois_pontos),
     url(r'^parada_especifica/(?P<pk>[0-9]+)/$', views.parada_especifica),
 

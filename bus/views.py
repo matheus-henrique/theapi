@@ -107,8 +107,12 @@ def linhas(request):
 				print("Nao existe : " + num)
 
 			
-
-			linha = Linha.objects.create(CodigoLinha=x['Linha']['CodigoLinha'],Origem=x['Linha']['Origem'],Retorno=x['Linha']['Retorno'],Denomicao=x['Linha']['Denomicao'], Zona=nome_zona)
+			codigo_linha = str(x['Linha']['CodigoLinha'])
+			if codigo_linha[0] == '0':
+				codigo_linha = codigo_linha[1:4]
+			else:
+				codigo_linha = str(x['Linha']['CodigoLinha'])
+			linha = Linha.objects.create(CodigoLinha=codigo_linha,Origem=x['Linha']['Origem'],Retorno=x['Linha']['Retorno'],Denomicao=x['Linha']['Denomicao'], Zona=nome_zona)
 
 		for y in x['Linha']['Veiculos']:
 			adptado = verifica_onibus_adaptado(y['CodigoVeiculo'])
@@ -183,6 +187,9 @@ def parada_especifica(request,pk):
 	url = "https://api.inthegra.strans.teresina.pi.gov.br/v1/paradasLinha?busca="+pk
 	verifica_token()
 	data = requests.get(url,proxies=proxies, data=json.dumps(dados),headers = cb)
+	lin = json.loads(data.text)
+	paradas = json.loads(data.text)
+
 	if data.status_code == 404:
 		content = {'please move along': 'nothing to see here'}
 		return Response(content, status=status.HTTP_404_NOT_FOUND)
@@ -204,15 +211,21 @@ def preecher_pardas(request):
 
 @api_view(['GET', 'POST'])
 def qualquer_distancia_dois_pontos(request):
-	origem = (-5.095197,-42.757071)
+	longitude = request.META['HTTP_LONGITUDE']
+	latitude = request.META['HTTP_LATITUDE']
+	print(longitude)
+	origem = (float(latitude),float(longitude))
 	index = 0
 	for x in Paradas.objects.all():
 		destino = (float(x.Lat),float(x.Long))
 		if index == 0:
 			maior = haversine(origem,destino)
 			menor = haversine(origem,destino)
+			menor_model = x
+			maior_model = x
 
 		if (haversine(origem,destino) > maior):
+			maior_model = x
 			maior = haversine(origem,destino)
 		if (haversine(origem,destino) < menor):
 			menor_model = x
@@ -221,7 +234,7 @@ def qualquer_distancia_dois_pontos(request):
 
 	print(menor)
 	print(maior)
-	print(menor_model.Denomicao)
+	print(maior_model.Denomicao)
 	content = {'CodigoParada' : menor_model.CodigoParada, 'Denomicao' : menor_model.Denomicao,'Denomicao' : menor_model.Denomicao, 'Endereco' : menor_model.Endereco, 'Lat' : menor_model.Lat, 'Long' : menor_model.Long}
 	return Response(content)
 
@@ -233,9 +246,6 @@ def mostrar_paradas(request):
 		paradas = Paradas.objects.all()
 		serializer = ParadasSerializers(paradas,many=True)
 		return Response(serializer.data)
-
-
-
 
 
 def linhas_estaticas(request):
@@ -296,7 +306,7 @@ def linhas_estaticas(request):
 			lin[index]['CodigoLinha'] == '0716' or lin[index]['CodigoLinha'] == '0801' or lin[index]['CodigoLinha'] == '0802' or
 			lin[index]['CodigoLinha'] == '0901' or lin[index]['CodigoLinha'] == '0902' or lin[index]['CodigoLinha'] == '0360' or
 			lin[index]['CodigoLinha'] == '0723' or lin[index]['CodigoLinha'] == '0170' or lin[index]['CodigoLinha'] == '0270' or
-			lin[index]['CodigoLinha'] == '716'):
+			lin[index]['CodigoLinha'] == '716' or lin[index]['CodigoLinha'] == '902'):
 				print("sul")
 				zona = "Sul"
 				su = su + 1;
@@ -409,3 +419,8 @@ def linhas_por_zona(request,pk):
 		linha = LinhaOnibus.objects.filter(Zona=pk)
 		serializer = LinhaOnibusSerializers(linha, many=True)
 		return Response(serializer.data)
+
+
+def excluir_parada(request):
+	Paradas.objects.all().delete()
+	return HttpResponse("Ok")

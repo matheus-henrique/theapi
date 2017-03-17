@@ -25,15 +25,23 @@ class Veiculo(models.Model):
 	Linha = models.ForeignKey(Linha,related_name='Veiculos')
 	Cadeirante = models.BooleanField(default=False)
 
-class LinhaOnibus(models.Model):
-	Numero = models.CharField(max_length=30)
-	Denomicao = models.CharField(max_length=200)
-	Zona = models.CharField(max_length=200)
-
 
 class Paradas(models.Model):
-	CodigoParada = models.CharField(max_length=10)
+	CodigoParada = models.CharField(max_length=15)
 	Denomicao = models.CharField(max_length=250)
 	Endereco = models.CharField(max_length=250, null=True)
 	Lat = models.CharField(max_length=30, null=True)
 	Long = models.CharField(max_length=30, null=True)
+
+class LinhaOnibus(models.Model):
+	Numero = models.CharField(max_length=30)
+	Denomicao = models.CharField(max_length=200)
+	Zona = models.CharField(max_length=200)
+	
+
+
+
+
+
+
+

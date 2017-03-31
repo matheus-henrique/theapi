@@ -18,6 +18,7 @@ urlpatterns = [
     url(r'^parada_proxima/$',views.qualquer_distancia_dois_pontos),
     url(r'^excluir/$',views.excluir_parada),
     url(r'^parada_especifica/(?P<pk>[0-9]+)/$', views.parada_especifica),
+    url(r'^trans_lat_long_in_end/', views.converter_lat_long_in_address)
 
 
 ]

@@ -11,14 +11,15 @@ from django.core import serializers
 from .models import Reclamacao,Veiculo,Linha,LinhaOnibus,Paradas
 from .serializers import ReclamacaoSerializers,LinhaSerializers,LinhaOnibusSerializers,ParadasSerializers
 from rest_framework.decorators import api_view
-
+from geopy.geocoders import Nominatim
 
 import requests
 import json
 import time
+import ssl
 
 
-init = datetime.now().minute # 20
+init = datetime.now()
 
 proxies = {
     	"http": "http://matheus.oliveira:bv0sdq2wbx@proxy.tre-pi.gov.br:3128/",
@@ -41,7 +42,7 @@ cadeirantes = ['02194','02200','02196','02186','02148','02555','02128','02501','
 '02190','02557','02547','04445','04357','04405','03069','03070','03242','04427','04376','03418','03462','04442','04386','02549','02553','02776','03233','01066','01069','01089','02154',
 '02152','02202','02214','02150','02503','02775','04437','04408','04348','04363','02182','02188','02210','04350','04432','04400','03456','03432','03444','04434','04359','04384','04409',
 '03430','02507','03255','04403','03412','04406','03074','03241','02226','02224','04373','02192','02779','02216','03453','03260','03151','01411','01384','01375','03458','03411','03452',
-'03436','04420','02533','03252','02771','03031','03240','02772','02222','04416','03446','03256','']
+'03436','04420','02533','03252','02771','03031','03240','02772','02222','04416','03446','03256','03147','01062','01138','']
 sem_info = ['04373','04338','04341','04333','01349','00198','00157','00183','00172','00197','00176','00194','00189','00145','00173','']
 ar = ['02563','04451','04454','04446','04453','03258','03468','04452','03469','03472','03461','03471','03466','03465','04448','04450','04447','04449','04455','04444','04445','03462','03074','02226','02224','03260','02222']
 
@@ -57,6 +58,9 @@ def pegar_token():
 
 token = pegar_token()
 cb['X-Auth-Token'] = json.loads(token.text)['token']
+ssl._create_default_https_context = ssl._create_unverified_context
+
+
 
 
 #print(token.text)
@@ -68,11 +72,17 @@ cb['X-Auth-Token'] = json.loads(token.text)['token']
 
 def verifica_token():
 	global token
-	now = datetime.now().minute
-	if (now - init >= 9):
+	global init
+	now = datetime.now()
+	dif = now - init
+	print(dif.total_seconds())
+	if (dif.total_seconds() >= 540):
+		init = datetime.now()
 		token = pegar_token()
 	else:
 		print("Nao precisa de nova requisicao")
+
+
 
 
 @api_view(['GET', 'POST'])
@@ -219,11 +229,26 @@ def preecher_pardas(request):
 def qualquer_distancia_dois_pontos(request):
 	longitude = request.META['HTTP_LONGITUDE']
 	latitude = request.META['HTTP_LATITUDE']
-	print(longitude)
+	linha = request.META.get('HTTP_LINHA', None)
+	paradas_proximas = []
+	paradas_m_proximas = {}
 	origem = (float(latitude),float(longitude))
 	index = 0
-	for x in Paradas.objects.all():
-		destino = (float(x.Lat),float(x.Long))
+	lala = 0
+	i = 0
+	if linha:
+		url = "https://api.inthegra.strans.teresina.pi.gov.br/v1/paradasLinha?busca="+linha
+		verifica_token()
+		data = requests.get(url,proxies=proxies, data=json.dumps(dados),headers = cb)
+		paradas = json.loads(data.text)
+		paradas = paradas['Paradas']
+	else:
+		paradas = Paradas.objects.all()
+	for x in paradas:
+		if linha:
+			destino = (float(x['Lat']),float(x['Long']))
+		else:
+			destino = (float(x.Lat),float(x.Long))
 		if index == 0:
 			maior = haversine(origem,destino)
 			menor = haversine(origem,destino)
@@ -237,11 +262,16 @@ def qualquer_distancia_dois_pontos(request):
 			menor_model = x
 			menor = haversine(origem,destino)
 		index = index + 1
+	
 
-	print(menor)
-	print(maior)
-	print(maior_model.Denomicao)
-	content = {'CodigoParada' : menor_model.CodigoParada, 'Denomicao' : menor_model.Denomicao,'Denomicao' : menor_model.Denomicao, 'Endereco' : menor_model.Endereco, 'Lat' : menor_model.Lat, 'Long' : menor_model.Long}
+	
+
+
+
+	if linha:
+		content = {'CodigoParada' : menor_model['CodigoParada'], 'Denomicao' : menor_model['Denomicao'], 'Endereco' : menor_model['Endereco'], 'Lat' : menor_model['Lat'], 'Long' : menor_model['Long']}
+	else:
+		content = {'CodigoParada' : menor_model.CodigoParada, 'Denomicao' : menor_model.Denomicao,'Denomicao' : menor_model.Denomicao, 'Endereco' : menor_model.Endereco, 'Lat' : menor_model.Lat, 'Long' : menor_model.Long}
 	return Response(content)
 
 
@@ -366,6 +396,17 @@ def verifica_onibus_adaptado(num):
 			return True
 	return False
 
+@api_view(['GET', 'POST'])
+def converter_lat_long_in_address(request):
+	longitude = request.META['HTTP_LONGITUDE']
+	latitude = request.META['HTTP_LATITUDE']
+	#teste = str(latitude)+","+str(longitude)
+	geo = Nominatim()
+	#print(teste)
+	location = geo.reverse(""+str(latitude)+","+str(longitude)+"",timeout=None)
+	print(location.address)
+	content = {"Endereco" : location.address}
+	return Response(content)
 
 def todos_veiculos(request,pk):
 	verifica_token()

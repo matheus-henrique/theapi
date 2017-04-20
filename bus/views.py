@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.http import HttpResponse,HttpResponseRedirect
 from datetime import datetime
 from geopy.distance import great_circle
 
@@ -8,11 +8,13 @@ from rest_framework import status
 from haversine import haversine
 from django.core import serializers
 
-from .models import Reclamacao,Veiculo,Linha,LinhaOnibus,Paradas
+from django.contrib.auth import authenticate, login,logout
+
+from .models import Reclamacao,Veiculo,Linha,LinhaOnibus,Paradas,OnibusInfoArAdpt
 from .serializers import ReclamacaoSerializers,LinhaSerializers,LinhaOnibusSerializers,ParadasSerializers
 from rest_framework.decorators import api_view
 from geopy.geocoders import Nominatim
-
+from django.contrib.auth.decorators import login_required
 import requests
 import json
 import time
@@ -42,9 +44,10 @@ cadeirantes = ['02194','02200','02196','02186','02148','02555','02128','02501','
 '02190','02557','02547','04445','04357','04405','03069','03070','03242','04427','04376','03418','03462','04442','04386','02549','02553','02776','03233','01066','01069','01089','02154',
 '02152','02202','02214','02150','02503','02775','04437','04408','04348','04363','02182','02188','02210','04350','04432','04400','03456','03432','03444','04434','04359','04384','04409',
 '03430','02507','03255','04403','03412','04406','03074','03241','02226','02224','04373','02192','02779','02216','03453','03260','03151','01411','01384','01375','03458','03411','03452',
-'03436','04420','02533','03252','02771','03031','03240','02772','02222','04416','03446','03256','03147','01062','01138','']
+'03436','04420','02533','03252','02771','03031','03240','02772','02222','04416','03446','03256','03147','01062','01138','03147','02228','02208','03243','03238','01060','04383','03431',
+'02787','03038','02768','02792','02770','02791','02790','']
 sem_info = ['04373','04338','04341','04333','01349','00198','00157','00183','00172','00197','00176','00194','00189','00145','00173','']
-ar = ['02563','04451','04454','04446','04453','03258','03468','04452','03469','03472','03461','03471','03466','03465','04448','04450','04447','04449','04455','04444','04445','03462','03074','02226','02224','03260','02222']
+ar = ['02563','04451','04454','04446','04453','03258','03468','04452','03469','03472','03461','03471','03466','03465','04448','04450','04447','04449','04455','04444','04445','03462','03074','02226','02224','03260','02222','02228','03038','02792','02791','02790']
 
 
 
@@ -99,7 +102,7 @@ def linhas(request):
 	verifica_token()
 	url = "https://api.inthegra.strans.teresina.pi.gov.br/v1/veiculos"
 	data = requests.get(url,proxies=proxies, data=json.dumps(dados),headers = cb)
-
+	print(data.text)
 	vec = json.loads(data.text)
 	linha = ''
 	veiculo = ''
@@ -134,6 +137,7 @@ def linhas(request):
 			adptado = verifica_onibus_adaptado(y['CodigoVeiculo'])
 			if Veiculo.objects.filter(CodigoVeiculo=y['CodigoVeiculo']).exists():
 				veiculo = Veiculo.objects.get(CodigoVeiculo=y['CodigoVeiculo'])
+				veiculo.Cadeirante=adptado
 				veiculo.Lat = y['Lat']
 				veiculo.Long = y['Long']
 				veiculo.Hora = y['Hora']
@@ -177,8 +181,41 @@ def distancia_raio(request):
 
 
 
+def loginpage(request):
+	if request.user.is_authenticated():
+		return HttpResponseRedirect("/administracao/")
+	else:
+		return render(request,'bus/login.html',{})
 
 
+@login_required(login_url="/login/")
+def sair(request):
+	logout(request)
+	return HttpResponseRedirect("/login/")
+
+@login_required(login_url="/login/")
+def resetar(request):
+	Linha.objects.all().delete()
+	return HttpResponseRedirect("/administracao/")
+
+@login_required(login_url="/login/")
+def administracao(request):
+	veiculos = Veiculo.objects.all()
+	linhas = Linha.objects.all()
+	paradas = Paradas.objects.all()
+	data = requests.get("https://inthegra.strans.teresina.pi.gov.br/", proxies=proxies)
+	return render(request, 'bus/index.html', {'veiculos' : veiculos, 'linhas' : linhas, 'paradas' : paradas, 'status' : data.status_code})
+
+def validarlogin(request):
+	 username = request.POST['username']
+	 password = request.POST['password']
+	 print(password)
+	 user = authenticate(username=username, password=password)
+	 if user is not None:
+	 	login(request, user)
+	 	return HttpResponseRedirect("/administracao/")
+	 else:
+	 	return HttpResponseRedirect("/login")
 
 def post_list(request):
 	global token
@@ -390,10 +427,18 @@ def linhas_estaticas(request):
 
 	return HttpResponse("Ok")
 
+
+def adicionar_onibus_adpt_banco(request):
+	for x in ar:
+		if (OnibusInfoArAdpt.objects.filter(linha=x).exists()):
+			onibus = OnibusInfoArAdpt.objects.get(linha=x)
+			onibus.ar = True
+			onibus.save()
+	return HttpResponse("Ok")
+
 def verifica_onibus_adaptado(num):
-	for i in cadeirantes:
-		if (i == num):
-			return True
+	if(OnibusInfoArAdpt.objects.filter(linha=num).exists()):
+		return True
 	return False
 
 @api_view(['GET', 'POST'])
@@ -407,6 +452,23 @@ def converter_lat_long_in_address(request):
 	print(location.address)
 	content = {"Endereco" : location.address}
 	return Response(content)
+
+
+
+def adicionar_vec_adpt(request):
+	if(OnibusInfoArAdpt.objects.filter(linha=request.POST.get('linha')).exists()):
+		vec = OnibusInfoArAdpt.objects.get(linha=request.POST.get('linha'))
+		vec.adptado = True
+		if (request.POST.get('ar') == None):
+			vec.ar = False
+		else:
+			vec.ar = True	
+	else:
+		if (request.POST.get('ar') == None):
+			OnibusInfoArAdpt.objects.create(linha=request.POST.get('linha'),adptado=True, ar=False)
+		else:
+			OnibusInfoArAdpt.objects.create(linha=request.POST.get('linha'),adptado=True, ar=True)
+	return HttpResponseRedirect("/administracao/")
 
 def todos_veiculos(request,pk):
 	verifica_token()

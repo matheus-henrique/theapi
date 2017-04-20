@@ -39,6 +39,11 @@ class LinhaOnibus(models.Model):
 	Zona = models.CharField(max_length=200)
 	
 
+class OnibusInfoArAdpt(models.Model):
+	linha = models.CharField(max_length=20)
+	adptado = models.BooleanField(default=False)
+	ar = models.BooleanField(default=False)
+
 
 
 

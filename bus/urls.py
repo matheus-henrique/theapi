@@ -18,7 +18,14 @@ urlpatterns = [
     url(r'^parada_proxima/$',views.qualquer_distancia_dois_pontos),
     url(r'^excluir/$',views.excluir_parada),
     url(r'^parada_especifica/(?P<pk>[0-9]+)/$', views.parada_especifica),
-    url(r'^trans_lat_long_in_end/', views.converter_lat_long_in_address)
+    url(r'^trans_lat_long_in_end/', views.converter_lat_long_in_address),
+    url(r'^login/',views.loginpage),
+    url(r'^validarlogin/', views.validarlogin),
+    url(r'^administracao/', views.administracao),
+    url(r'^resetar/', views.resetar),
+    url(r'^sair/', views.sair),
+    url(r'^addonibusadpt/', views.adicionar_vec_adpt)
+
 
 
 ]

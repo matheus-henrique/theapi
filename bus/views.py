@@ -496,6 +496,7 @@ def todos_veiculos(request,pk):
 				veiculo.Lat = y['Lat']
 				veiculo.Long = y['Long']
 				veiculo.Hora = y['Hora']
+				veiculo.Cadeirante = verifica_onibus_adaptado(['CodigoVeiculo'])
 				veiculo.save()
 			else:
 				if verifica_onibus_adaptado(['CodigoVeiculo']):

@@ -51,7 +51,7 @@ ar = ['02563','04451','04454','04446','04453','03258','03468','04452','03469','0
 
 
 
-print(len(cadeirantes))
+
 
 def pegar_token():
 	print("dadasd")
@@ -99,10 +99,10 @@ def reclamacoes(request):
 
 @api_view(['GET', 'POST'])
 def linhas(request):
+	hora = datetime.now()
 	verifica_token()
 	url = "https://api.inthegra.strans.teresina.pi.gov.br/v1/veiculos"
 	data = requests.get(url,proxies=proxies, data=json.dumps(dados),headers = cb)
-	print(data.text)
 	vec = json.loads(data.text)
 	linha = ''
 	veiculo = ''
@@ -134,16 +134,16 @@ def linhas(request):
 			linha = Linha.objects.create(CodigoLinha=codigo_linha,Origem=x['Linha']['Origem'],Retorno=x['Linha']['Retorno'],Denomicao=x['Linha']['Denomicao'], Zona=nome_zona)
 
 		for y in x['Linha']['Veiculos']:
-			adptado = verifica_onibus_adaptado(y['CodigoVeiculo'])
 			if Veiculo.objects.filter(CodigoVeiculo=y['CodigoVeiculo']).exists():
 				veiculo = Veiculo.objects.get(CodigoVeiculo=y['CodigoVeiculo'])
-				veiculo.Cadeirante=adptado
-				veiculo.Lat = y['Lat']
-				veiculo.Long = y['Long']
-				veiculo.Hora = y['Hora']
+				if(veiculo.Lat != y['Lat'] or veiculo.Long != y['Long']):
+					veiculo.Lat = y['Lat']
+					veiculo.Long = y['Long']
+					veiculo.Hora = str(hora.hour)+":"+str(hora.minute)+":"+str(hora.second)
+				veiculo.Cadeirante= verifica_onibus_adaptado(veiculo.CodigoVeiculo)
 				veiculo.save()
 			else:
-				veiculo = Veiculo.objects.create(CodigoVeiculo=y['CodigoVeiculo'],Lat=y['Lat'],Long=y['Long'],Hora=y['Hora'],Linha=linha,Cadeirante=adptado)		
+				veiculo = Veiculo.objects.create(CodigoVeiculo=y['CodigoVeiculo'],Lat=y['Lat'],Long=y['Long'],Hora=str(hora.hour)+":"+str(hora.minute)+":"+str(hora.second),Linha=linha,Cadeirante=verifica_onibus_adaptado(y['CodigoVeiculo']))		
 	if request.method == 'GET':
 		linha = Linha.objects.all()
 		serializer = LinhaSerializers(linha, many=True)
@@ -470,40 +470,6 @@ def adicionar_vec_adpt(request):
 			OnibusInfoArAdpt.objects.create(linha=request.POST.get('linha'),adptado=True, ar=True)
 	return HttpResponseRedirect("/administracao/")
 
-def todos_veiculos(request,pk):
-	verifica_token()
-	url = "https://api.inthegra.strans.teresina.pi.gov.br/v1/"
-	busca = request.GET.get('busca')
-	if busca is None:
-		url += pk
-	else:
-		url += pk + "?" + "busca=" + busca 
-	data = requests.get(url,proxies=proxies, data=json.dumps(dados),headers = cb)
-
-	vec = json.loads(data.text)
-	linha = ''
-	veiculo = ''
-	print(vec)
-	for x in vec:
-		if Linha.objects.filter(CodigoLinha=x['Linha']['CodigoLinha']).exists():
-			linha = Linha.objects.get(CodigoLinha=x['Linha']['CodigoLinha'])
-		else:
-			linha = Linha.objects.create(CodigoLinha=x['Linha']['CodigoLinha'],Origem=x['Linha']['Origem'],Retorno=x['Linha']['Retorno'],Denomicao=x['Linha']['Denomicao'])
-
-		for y in x['Linha']['Veiculos']:
-			if Veiculo.objects.filter(CodigoVeiculo=y['CodigoVeiculo']).exists():
-				veiculo = Veiculo.objects.get(CodigoVeiculo=y['CodigoVeiculo'])
-				veiculo.Lat = y['Lat']
-				veiculo.Long = y['Long']
-				veiculo.Hora = y['Hora']
-				veiculo.Cadeirante = verifica_onibus_adaptado(['CodigoVeiculo'])
-				veiculo.save()
-			else:
-				if verifica_onibus_adaptado(['CodigoVeiculo']):
-					veiculo = Veiculo.objects.create(CodigoVeiculo=y['CodigoVeiculo'],Lat=y['Lat'],Long=y['Long'],Hora=y['Hora'],Linha=linha,Cadeirante=True)
-				else:
-					veiculo = Veiculo.objects.create(CodigoVeiculo=y['CodigoVeiculo'],Lat=y['Lat'],Long=y['Long'],Hora=y['Hora'],Linha=linha,Cadeirante=False)
-	return HttpResponse(data.text)
 
 @api_view(['GET', 'POST'])
 def todas_linhas_estaticas(request):

@@ -99,7 +99,7 @@ def reclamacoes(request):
 
 @api_view(['GET', 'POST'])
 def linhas(request):
-	hora = datetime.now()
+	horas = datetime.now()
 	verifica_token()
 	url = "https://api.inthegra.strans.teresina.pi.gov.br/v1/veiculos"
 	data = requests.get(url,proxies=proxies, data=json.dumps(dados),headers = cb)
@@ -134,16 +134,30 @@ def linhas(request):
 			linha = Linha.objects.create(CodigoLinha=codigo_linha,Origem=x['Linha']['Origem'],Retorno=x['Linha']['Retorno'],Denomicao=x['Linha']['Denomicao'], Zona=nome_zona)
 
 		for y in x['Linha']['Veiculos']:
+			hora = y['Hora']
+			hora = hora[0:2]
+			minuto = y['Hora']
+			minuto = minuto[3:5]
+			segundos = y['Hora']
+			segundos = segundos[6:10]
+			if(int(hora) == int(horas.hour) and int(minuto) > int(horas.minute)):
+				hora_sistema = str(horas.hour)+":"+str(horas.minute)+":"+str(segundos)
+			elif(int(hora) == int(horas.hour) and int(minuto) == int(horas.minute) and int(segundos) > int(horas.second)):
+				hora_sistema = str(horas.hour)+":"+str(horas.minute)+":"+str(horas.second)
+			else:
+				hora_sistema = y['Hora']
+
 			if Veiculo.objects.filter(CodigoVeiculo=y['CodigoVeiculo']).exists():
 				veiculo = Veiculo.objects.get(CodigoVeiculo=y['CodigoVeiculo'])
-				if(veiculo.Lat != y['Lat'] or veiculo.Long != y['Long']):
+				if(veiculo.Lat != y['Lat'] and veiculo.Long != y['Long']):
 					veiculo.Lat = y['Lat']
 					veiculo.Long = y['Long']
-					veiculo.Hora = str(hora.hour)+":"+str(hora.minute)+":"+str(hora.second)
+					veiculo.Hora = hora_sistema
+					#veiculo.Hora = str(hora.hour)+":"+str(hora.minute)+":"+str(hora.second)
 				veiculo.Cadeirante= verifica_onibus_adaptado(veiculo.CodigoVeiculo)
 				veiculo.save()
 			else:
-				veiculo = Veiculo.objects.create(CodigoVeiculo=y['CodigoVeiculo'],Lat=y['Lat'],Long=y['Long'],Hora=str(hora.hour)+":"+str(hora.minute)+":"+str(hora.second),Linha=linha,Cadeirante=verifica_onibus_adaptado(y['CodigoVeiculo']))		
+				veiculo = Veiculo.objects.create(CodigoVeiculo=y['CodigoVeiculo'],Lat=y['Lat'],Long=y['Long'],Hora=hora_sistema,Linha=linha,Cadeirante=verifica_onibus_adaptado(y['CodigoVeiculo']))		
 	if request.method == 'GET':
 		linha = Linha.objects.all()
 		serializer = LinhaSerializers(linha, many=True)

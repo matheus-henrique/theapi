@@ -4,7 +4,7 @@ from django import forms
 
 
 class Reclamacao(models.Model):
-	user = models.ForeignKey('auth.User')
+	user = models.ForeignKey('auth.User',  on_delete=models.CASCADE)
 	texto = models.TextField()
 	img = models.FileField()
 
@@ -22,7 +22,7 @@ class Veiculo(models.Model):
 	Lat = models.CharField(max_length=30)
 	Long = models.CharField(max_length=30)
 	Hora = models.CharField(max_length=30)
-	Linha = models.ForeignKey(Linha,related_name='Veiculos')
+	Linha = models.ForeignKey(Linha,related_name='Veiculos',  on_delete=models.CASCADE)
 	Cadeirante = models.BooleanField(default=False)
 
 

@@ -20,17 +20,10 @@ import json
 import time
 import ssl
 
-
 init = datetime.now()
 
-proxies = {
-    	"http": "http://matheus.oliveira:bv0sdq2wbx@proxy.tre-pi.gov.br:3128/",
-    	"https": "https://matheus.oliveira:bv0sdq2wbx@proxy.tre-pi.gov.br:3128/",
-	}
 dados = {"email": "matheusbynickzinho@hotmail.com", "password": "bv0sdq2wb8"}
 cb = {"Content-Type": "application/json", "Accept-Language": "en", "Date": "Wed, 13 Apr 2016 12:07:37 GMT", "X-Api-Key":"b4dadc9bd9284ea9afcc5889ba80f04a"}
-
-
 
 cadeirantes = ['02194','02200','02196','02186','02148','02555','02128','02501','02563','02511','02521','02134','02773','04391','04402','04415','04451','04435','04349','04372','04401',
 '04433','04366','04388','04441','04443','04417','04454','04431','04379','04385','04397','04446','04387','04374','04453','03404','04411','04380','04381','03257','03250','03067','03258',
@@ -46,30 +39,23 @@ cadeirantes = ['02194','02200','02196','02186','02148','02555','02128','02501','
 '03430','02507','03255','04403','03412','04406','03074','03241','02226','02224','04373','02192','02779','02216','03453','03260','03151','01411','01384','01375','03458','03411','03452',
 '03436','04420','02533','03252','02771','03031','03240','02772','02222','04416','03446','03256','03147','01062','01138','03147','02228','02208','03243','03238','01060','04383','03431',
 '02787','03038','02768','02792','02770','02791','02790','']
+
 sem_info = ['04373','04338','04341','04333','01349','00198','00157','00183','00172','00197','00176','00194','00189','00145','00173','']
+
 ar = ['02563','04451','04454','04446','04453','03258','03468','04452','03469','03472','03461','03471','03466','03465','04448','04450','04447','04449','04455','04444','04445','03462','03074','02226','02224','03260','02222','02228','03038','02792','02791','02790']
 
 
-
-
-
 def pegar_token():
-	print("dadasd")
-	data = requests.post('https://api.inthegra.strans.teresina.pi.gov.br/v1/signin',proxies=proxies, data=json.dumps(dados),headers = cb)
+	print("Iniciando requisição");
+	data = requests.post('https://api.inthegra.strans.teresina.pi.gov.br/v1/signin', data=json.dumps(dados),headers = cb)
 	cb['X-Auth-Token'] = json.loads(data.text)['token']
 	return data
 
+
+token = 'matheus henrique';
 token = pegar_token()
 cb['X-Auth-Token'] = json.loads(token.text)['token']
 ssl._create_default_https_context = ssl._create_unverified_context
-
-
-
-
-#print(token.text)
-#print(token.text)
-
-# Create your views here.
 
 
 
@@ -85,9 +71,6 @@ def verifica_token():
 	else:
 		print("Nao precisa de nova requisicao")
 
-
-
-
 @api_view(['GET', 'POST'])
 def reclamacoes(request):
 	if request.method == 'GET':
@@ -102,11 +85,10 @@ def linhas(request):
 	horas = datetime.now()
 	verifica_token()
 	url = "https://api.inthegra.strans.teresina.pi.gov.br/v1/veiculos"
-	data = requests.get(url,proxies=proxies, data=json.dumps(dados),headers = cb)
+	data = requests.get(url, data=json.dumps(dados),headers = cb)
 	vec = json.loads(data.text)
 	linha = ''
 	veiculo = ''
-
 
 	for x in vec:
 		codigo_linhav = str(x['Linha']['CodigoLinha'])
@@ -196,7 +178,7 @@ def distancia_raio(request):
 
 
 def loginpage(request):
-	if request.user.is_authenticated():
+	if request.user.is_authenticated:
 		return HttpResponseRedirect("/administracao/")
 	else:
 		return render(request,'bus/login.html',{})
@@ -217,7 +199,7 @@ def administracao(request):
 	veiculos = Veiculo.objects.all()
 	linhas = Linha.objects.all()
 	paradas = Paradas.objects.all()
-	data = requests.get("https://inthegra.strans.teresina.pi.gov.br/", proxies=proxies)
+	data = requests.get("https://inthegra.strans.teresina.pi.gov.br/")
 	return render(request, 'bus/index.html', {'veiculos' : veiculos, 'linhas' : linhas, 'paradas' : paradas, 'status' : data.status_code})
 
 def validarlogin(request):
@@ -245,7 +227,7 @@ def post_list(request):
 
 def distancia_onibus_user(request):
 	url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins=-5.082728,-42.799080&destinations=-5.096149,-42.757065&mode=bicycling&language=pt-BR&key=AIzaSyAXjVVb85BzbZ3GRIFH6rO2WGmBylGG-0c"
-	data = requests.get(url,proxies=proxies)
+	data = requests.get(url)
 	return HttpResponse(data.text)
 
 
@@ -253,7 +235,7 @@ def distancia_onibus_user(request):
 def parada_especifica(request,pk):
 	url = "https://api.inthegra.strans.teresina.pi.gov.br/v1/paradasLinha?busca="+pk
 	verifica_token()
-	data = requests.get(url,proxies=proxies, data=json.dumps(dados),headers = cb)
+	data = requests.get(url, data=json.dumps(dados),headers = cb)
 	lin = json.loads(data.text)
 	paradas = json.loads(data.text)
 
@@ -269,7 +251,7 @@ def parada_especifica(request,pk):
 def preecher_pardas(request):
 	url = "https://api.inthegra.strans.teresina.pi.gov.br/v1/paradas"
 	verifica_token()
-	data = requests.get(url,proxies=proxies, data=json.dumps(dados),headers = cb)
+	data = requests.get(url, data=json.dumps(dados),headers = cb)
 	paradas = json.loads(data.text)
 	for x in paradas:
 		if(x['Endereco'] != None):
@@ -290,7 +272,7 @@ def qualquer_distancia_dois_pontos(request):
 	if linha:
 		url = "https://api.inthegra.strans.teresina.pi.gov.br/v1/paradasLinha?busca="+linha
 		verifica_token()
-		data = requests.get(url,proxies=proxies, data=json.dumps(dados),headers = cb)
+		data = requests.get(url, data=json.dumps(dados),headers = cb)
 		paradas = json.loads(data.text)
 		paradas = paradas['Paradas']
 	else:
@@ -313,11 +295,6 @@ def qualquer_distancia_dois_pontos(request):
 			menor_model = x
 			menor = haversine(origem,destino)
 		index = index + 1
-	
-
-	
-
-
 
 	if linha:
 		content = {'CodigoParada' : menor_model['CodigoParada'], 'Denomicao' : menor_model['Denomicao'], 'Endereco' : menor_model['Endereco'], 'Lat' : menor_model['Lat'], 'Long' : menor_model['Long']}
@@ -338,7 +315,7 @@ def mostrar_paradas(request):
 def linhas_estaticas(request):
 	verifica_token()
 	url = "https://api.inthegra.strans.teresina.pi.gov.br/v1/linhas"
-	data = requests.get(url,proxies=proxies, data=json.dumps(dados),headers = cb)
+	data = requests.get(url, data=json.dumps(dados),headers = cb)
 	lin = json.loads(data.text)
 	index = 0;
 	s = 0;
@@ -509,7 +486,6 @@ def linhas_por_zona(request,pk):
 		linha = LinhaOnibus.objects.filter(Zona=pk)
 		serializer = LinhaOnibusSerializers(linha, many=True)
 		return Response(serializer.data)
-
 
 def excluir_parada(request):
 	Linha.objects.all().delete()
